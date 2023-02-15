@@ -16,10 +16,8 @@ on:
 permissions:
   # Need `contents: read` to checkout the repository
   # Need `contents: write` to update the step metadata
-  # Need `pull-requests: write` to create a pull request
   contents: write
-  pull-requests: write
-
+ 
 jobs:
   # Get the current step from .github/script/STEP so we can
   # limit running the main job when the learner is on the same step.
@@ -41,12 +39,12 @@ jobs:
 
     # We will only run this action when:
     # 1. This repository isn't the template repository
-    # 2. The STEP is currently 0
+    # 2. The STEP is currently 1
     # Reference https://docs.github.com/en/actions/learn-github-actions/contexts
     # Reference https://docs.github.com/en/actions/learn-github-actions/expressions
     if: >-
       ${{ !github.event.repository.is_template
-          && needs.get_current_step.outputs.current_step == 0 }}
+          && needs.get_current_step.outputs.current_step == 1 }}
 
     # We'll run Ubuntu for performance instead of Mac or Windows
     runs-on: ubuntu-latest
@@ -58,7 +56,7 @@ jobs:
         with:
           fetch-depth: 0 # Let's get all the branches
 
-      - name: Prepare a branch, pull request, and merge conflict
+      - name: Prepare a branch
         run: |
           echo "Make sure we are on step 0"
           if [ "$(cat .github/script/STEP)" != 0 ]
@@ -82,21 +80,6 @@ jobs:
 
           echo "Push"
           git push --set-upstream origin $BRANCH
-
-          echo "Make a pull request"
-          # Reference https://cli.github.com/manual/gh_pr_create
-          gh pr create --title "Resolving merge conflicts" --body "Resolving merge conflicts"
-
-          echo "Restore main"
-          git checkout main
-
-          echo "Create a merge conflict"
-          sed -i.bak 's/Experience/Jobs/' resume.md 
-          git add resume.md
-          git commit --message="Update resume.md in main"
-
-          echo "Push"
-          git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
